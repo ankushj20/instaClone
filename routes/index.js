@@ -1,10 +1,10 @@
 var express = require('express');
 var router = express.Router();
-const userModel = require('./users');
+const userModel = require('../models/users');
 const passport = require('passport');
 const localStrategy = require('passport-local')
 const upload = require("./multer")
-const postModel = require("./post") 
+const postModel = require("../models/post") 
 
 passport.use(new localStrategy(userModel.authenticate()));
 
@@ -28,9 +28,14 @@ router.get('/profile', isLoggedIn, async function(req, res) {
   res.render('profile', {footer: true, user});
 });
 
-router.get('/search', isLoggedIn, function(req, res) {
-  res.render('search', {footer: true});
+router.get('/search', (req, res) => {
+  if (req.user) {
+    res.render('search', { user: req.user, footer: true });
+  } else {
+    res.render('search', { user: null, footer: true });
+  }
 });
+
 
 router.get('/like/post/:id', isLoggedIn, async function(req, res) {
   const user = await userModel.findOne({ username: req.session.passport.user })
@@ -51,9 +56,18 @@ router.get('/edit',isLoggedIn, async function(req, res) {
   res.render('edit', {footer: true, user});
 });
 
-router.get('/upload',isLoggedIn, function(req, res) {
-  res.render('upload', {footer: true});
+router.get('/upload', (req, res) => {
+  // Check if user is authenticated and available
+  if (req.user) {
+    // Render upload.ejs and pass user and footer object
+    res.render('upload', { user: req.user, footer: true });
+  } else {
+    // If user is not logged in, redirect to login or send a default value
+    res.render('upload', { user: null, footer: true });
+  }
 });
+
+
 router.post('/register', function(req,res,next){
   const UserData = new userModel({
     username: req.body.username,
